@@ -1,0 +1,39 @@
+{
+  "_comment": "open-connector-mt 的 provider 事实快照。CI 只有本仓 checkout，读不到连接器仓；三态必须能离线推导。刷新：scripts/build_connector_status.py --refresh-fixture。",
+  "count": 8,
+  "providers": {
+    "carrier-portal": {
+      "catalog": false,
+      "executor_tests": 0
+    },
+    "cn-commerce": {
+      "catalog": false,
+      "executor_tests": 0
+    },
+    "kingdee": {
+      "catalog": true,
+      "executor_tests": 0
+    },
+    "pos": {
+      "catalog": false,
+      "executor_tests": 0
+    },
+    "shopify_admin": {
+      "catalog": true,
+      "executor_tests": 1
+    },
+    "supplier-portal": {
+      "catalog": false,
+      "executor_tests": 0
+    },
+    "wechatpay": {
+      "catalog": true,
+      "executor_tests": 2
+    },
+    "wms": {
+      "catalog": false,
+      "executor_tests": 0
+    }
+  },
+  "source": "open-connector-mt"
+}

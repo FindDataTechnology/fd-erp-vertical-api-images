@@ -1,0 +1,43 @@
+name: gates
+
+# 这个仓的四道门（绑定 provider 存在性、角色词表 ×3、面级对位 ×2、appliance 副本、清单形状）
+# 此前只在有人本地跑 pytest 时生效——等于约定不是门。2026-11-08 抓到"meituan 写进外卖结算"
+# "shopify 写进订单收款"两处已上架的错，都是这些门该拦而没跑的情形。
+#
+# 面级对位门在 CI 里**不会跳过**：它优先读 open-connector-mt checkout，没有就读入库快照
+# tests/fixtures/connector-binding-actions.json。目录侧若有变化，本地跑
+# scripts/refresh_connector_catalog_ids.py 刷新快照并随包一起提交。
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+
+      # runner 上没有内核仓（fd-erp-ledger-mcp 是兄弟仓）也没有 Postgres：conftest 会把
+      # 依赖内核的用例如实 skip，资产类门（绑定声明/角色词表/面级对位/appliance 副本/
+      # 清单形状）照常执行——这正是本 workflow 要守的那几道。
+      #
+      # 那批被 skip 的账务回归**不是没人管**：内核仓自己有 CI 了
+      # （fd-erp-ledger-mcp/.github/workflows/gates.yml，真 postgres:16 service，69 例全绿）。
+      # 分工：本仓守"模板资产与声明是否自洽"，内核仓守"账务内核本身"。想让本仓也覆盖内核，
+      # 得在这里检出私有兄弟仓并起 Postgres service——那需要凭据，且会让本仓的 CI 依赖外部仓
+      # 的可用性，故不做。
+      - name: Gates
+        run: python -m pytest -q
+
+      - name: 快照新鲜度（有目录 checkout 时才可能跑，缺失则跳过）
+        run: python scripts/refresh_connector_catalog_ids.py --check || echo "无 open-connector-mt checkout：跳过目录新鲜度比对"

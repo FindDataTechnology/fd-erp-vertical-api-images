@@ -1,0 +1,121 @@
+# fd-erp-vertical-api 出片（公开仓免费线）。
+#
+# 本仓是**双包 vendor 快照源**：`fd-erp-vertical-api/Dockerfile` 的构建上下文要求
+# 同时含 `fd-erp-vertical-api/` 与 `fd-erp-vertical-templates/` 两个同级目录
+# （模板包不在 PyPI，必须随片携带）。真 sha 记在 VENDORED.json。
+#
+# 必须有的那条冒烟：池的默认 boot 门 `docker run` 无 env，而 `cli.py serve` 在
+# InProcess 形态要求 ERP_LEDGER_DATABASE_URL ⇒ 结构性假失败。根目录的
+# `scripts/ci-smoke.sh`（从包内复制的根副本，出处见 VENDORED.json）优先被执行。
+name: image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: hkccr.ccs.tencentyun.com
+  NAMESPACE: finddata-business
+  IMAGE_NAME: fd-erp-vertical-api
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.TCR_USER }}
+          password: ${{ secrets.TCR_PASS }}
+
+      - id: prev
+        name: 读 main 当前 digest（内容基线）
+        run: |
+          img="$REGISTRY/$NAMESPACE/$IMAGE_NAME"
+          cur=$(docker buildx imagetools inspect "$img:main" \
+                --format '{{.Manifest.Digest}}' 2>/dev/null || true)
+          echo "digest=$cur" >> "$GITHUB_OUTPUT"
+          echo "当前 main digest: ${cur:-<不存在，本次为首次构建>}"
+
+      - name: Build (load, no push) —— 先验片再推
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: fd-erp-vertical-api/Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          provenance: false
+          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:candidate
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 真冒烟 —— 三条硬判据
+        run: bash scripts/ci-smoke.sh "${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:candidate"
+
+      - name: 片内验证 —— 我的改动真在片里
+        run: |
+          set -euo pipefail
+          img="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:candidate"
+          docker run --rm --entrypoint python "$img" -c "
+          import inspect
+          from fd_erp_vertical_templates import bindings
+          src = inspect.getsource(bindings._load_from_read_face)
+          assert '/api/v1/distribution/' in src, 'machine route missing — wrong templates snapshot?'
+          assert '\"/d/' not in src, 'session route still used'
+          print('templates read-face OK: machine route')
+          "
+          docker run --rm --entrypoint python "$img" -c "
+          import fd_erp_vertical_api, pathlib
+          print('api package at', pathlib.Path(fd_erp_vertical_api.__file__).parent)
+          "
+
+      - id: build
+        name: Push main
+        run: |
+          set -euo pipefail
+          src="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}:candidate"
+          dst="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}"
+          docker tag "$src" "$dst:main"
+          docker push "$dst:main"
+
+      - name: 内容变了才铸不可变 tag
+        env:
+          OLD: ${{ steps.prev.outputs.digest }}
+        run: |
+          set -euo pipefail
+          img="${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ env.IMAGE_NAME }}"
+          NEW=$(docker buildx imagetools inspect "$img:main" --format '{{.Manifest.Digest}}' 2>/dev/null || true)
+          [ -n "$NEW" ] || { echo "::error::registry reports no digest"; exit 1; }
+          if [ "$NEW" = "$OLD" ]; then
+            echo "内容未变（$NEW）：不铸新 tag"
+            echo "### 内容未变，未产出新 tag" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          tag="sha-${GITHUB_SHA::7}"
+          docker buildx imagetools create -t "$img:$tag" "$img@$NEW"
+          echo "已铸 $tag → $NEW"
+          {
+            echo "## 出片 → hkccr"
+            echo ""
+            echo "| field | value |"
+            echo "|---|---|"
+            echo "| tag | \`$tag\` |"
+            echo "| digest | \`$NEW\` |"
+            echo "| VENDORED | $(cat VENDORED.json | tr -d '\n' | head -c 300) |"
+            echo ""
+            echo "ccr 由 cheap9 relay 在 ≤5 分钟内补齐；**从集群节点真拉一次才算到了**。"
+          } >> "$GITHUB_STEP_SUMMARY"

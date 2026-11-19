@@ -1,0 +1,1233 @@
+{
+  "counts": {
+    "health_probes": [
+      "/health",
+      "/healthz"
+    ],
+    "mcp_tools": 37,
+    "placeholder_routes": 8,
+    "routes": 147
+  },
+  "mcp_tools": [
+    "approve_billing_rule",
+    "approve_posting_rule",
+    "bill_event",
+    "bill_period_snapshot",
+    "close_period",
+    "confirm_proposal",
+    "decide_event",
+    "get_fee_detail",
+    "get_recon_report",
+    "ingest_event",
+    "list_billing_rules",
+    "list_credit_reservations",
+    "list_fees",
+    "list_periods",
+    "list_posting_gaps",
+    "list_posting_rules",
+    "list_proposals",
+    "period_report",
+    "period_status",
+    "post_event",
+    "project_event",
+    "query_balance",
+    "query_credit",
+    "query_entries",
+    "query_events",
+    "query_object_balance",
+    "reject_proposal",
+    "release_credit",
+    "reopen_period",
+    "reserve_credit",
+    "reverse_fee",
+    "run_reconciliation",
+    "simulate_billing",
+    "submit_billing_rule",
+    "submit_event",
+    "submit_posting_rule",
+    "submit_proposal"
+  ],
+  "measured_from": {
+    "api_package": "../fd-erp-vertical-api/fd_erp_vertical_api",
+    "tool_surface": "../fd-erp-ledger-mcp/tool-surface.json"
+  },
+  "routes": [
+    {
+      "function": "cp_dock_slots",
+      "line": 1160,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/dock-slots",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_freight_statements",
+      "line": 1277,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/freight-statements",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_freight_detail",
+      "line": 1300,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/freight-statements/{statement_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_freight_confirm",
+      "line": 1314,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/cp/freight-statements/{statement_id}/confirm",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_waybills",
+      "line": 1091,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/waybills",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_waybill_detail",
+      "line": 1115,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/waybills/{waybill_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_waybill_accept",
+      "line": 1141,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/cp/waybills/{waybill_id}/accept",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_dock_reserve",
+      "line": 1169,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/cp/waybills/{waybill_id}/dock-reservation",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_waybill_events",
+      "line": 1245,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/waybills/{waybill_id}/events",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_pickup_checkin",
+      "line": 1201,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/cp/waybills/{waybill_id}/pickup-checkin",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_pod_report",
+      "line": 1218,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/cp/waybills/{waybill_id}/pod",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "cp_workspace",
+      "line": 1057,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/workspace",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_assets",
+      "line": 1847,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/assets",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_register_asset",
+      "line": 1924,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/assets",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_depreciate",
+      "line": 1893,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/assets/depreciation/{period}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_void_depreciation",
+      "line": 1910,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/assets/depreciation/{period}/void",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_asset_summary",
+      "line": 1852,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/assets/summary",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_set_asset_threshold",
+      "line": 1861,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/assets/threshold",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_asset",
+      "line": 1953,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/assets/{asset_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_asset_book_value",
+      "line": 1968,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/assets/{asset_id}/book-value",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_asset_plan",
+      "line": 1962,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/assets/{asset_id}/plan",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_bad_debt_schedule",
+      "line": 1783,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/bad-debts/schedule",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_set_bad_debt_schedule",
+      "line": 1788,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/bad-debts/schedule",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_bad_debt_status",
+      "line": 1806,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/bad-debts/status",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_accrue_bad_debt",
+      "line": 1825,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/bad-debts/{period}/accrue",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_void_bad_debt",
+      "line": 1831,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/bad-debts/{period}/void",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_book_balances",
+      "line": 2006,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/books/balances",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_journal",
+      "line": 2029,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/books/journal",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_subsidiary_ledger",
+      "line": 2012,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/books/ledger/{account_code}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_party_statement",
+      "line": 2056,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/books/party-statement",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_voucher",
+      "line": 2046,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/books/voucher/{txn_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_closing_transfer",
+      "line": 1458,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/closing/{period}/transfer",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_post_cogs",
+      "line": 2102,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/cost/cogs/{period}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_cost_issue_price",
+      "line": 2082,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/cost/issue-price",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_cost_replay",
+      "line": 2073,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/cost/replay",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_set_standard_cost",
+      "line": 2112,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/cost/standard",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_register_vat_return",
+      "line": 1714,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/filings/vat-return",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_fx_rates",
+      "line": 2143,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/fx/rates",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_register_fx_rates",
+      "line": 2150,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/fx/rates",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_fx_revalue",
+      "line": 2185,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/fx/revaluation/{period}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_fx_status",
+      "line": 2170,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/fx/status/{period}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_invoices",
+      "line": 1552,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/invoices",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_register_invoice",
+      "line": 1588,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/invoices",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_invoice_deduction",
+      "line": 1559,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/invoices/deduction",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_invoice_reconciliation",
+      "line": 1565,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/invoices/reconciliation",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_register_red",
+      "line": 1627,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/invoices/red",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_invoice",
+      "line": 1580,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/invoices/{number}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_certify_invoice",
+      "line": 1614,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/invoices/{number}/certify",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_post_invoice",
+      "line": 1648,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/invoices/{number}/post",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_post_red",
+      "line": 1672,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/invoices/{number}/post-red",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_month_end",
+      "line": 1977,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/month-end/{period}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_month_end_close",
+      "line": 1993,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/month-end/{period}/close",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_month_end_run",
+      "line": 1983,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/month-end/{period}/run",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_opening",
+      "line": 1426,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/opening",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_register_opening",
+      "line": 1431,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/opening",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_payable_aging",
+      "line": 1777,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/payables/aging",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_periods",
+      "line": 1412,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/periods",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_period",
+      "line": 1420,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/periods/{period}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_close_period",
+      "line": 1464,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/periods/{period}/close",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_reopen_period",
+      "line": 1478,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/periods/{period}/reopen",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_period_report",
+      "line": 1492,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/periods/{period}/report",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_proposals",
+      "line": 1511,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/proposals",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_proposal",
+      "line": 1518,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/proposals/{proposal_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_confirm",
+      "line": 1528,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/proposals/{proposal_id}/confirm",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_reject",
+      "line": 1535,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/fi/proposals/{proposal_id}/reject",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_receivable_aging",
+      "line": 1767,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/receivables/aging",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_bad_debt_preview",
+      "line": 1813,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/bad-debt-preview",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_balance_sheet",
+      "line": 1392,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/balance-sheet",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_cash_flow",
+      "line": 1404,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/cash-flow",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_cash_flow_indirect",
+      "line": 2134,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/cash-flow-indirect",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_closing_preview",
+      "line": 1452,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/closing-preview",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_cogs_preview",
+      "line": 2095,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/cogs-preview",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_depreciation_preview",
+      "line": 1884,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/depreciation-preview",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_filing_summary",
+      "line": 1708,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/filing-summary",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_fx_preview",
+      "line": 2179,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/fx-revaluation-preview",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_income_statement",
+      "line": 1398,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/income-statement",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_income_tax_prepay",
+      "line": 1702,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/income-tax-prepay",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_invoice_summary",
+      "line": 1574,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/invoice-summary",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_surcharges",
+      "line": 1692,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/surcharges",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "fi_vat_return",
+      "line": 1728,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/fi/reports/vat-return",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "list_pagesets",
+      "line": 273,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/pagesets",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "se_alerts",
+      "line": 552,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/alerts",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_alert_handle",
+      "line": 562,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/se/alerts/{alert_id}/handle",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_customers",
+      "line": 247,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/customers",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_customer_360",
+      "line": 275,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/customers/{customer_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_customer_orders",
+      "line": 300,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/customers/{customer_id}/orders",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_list_invoice_requests",
+      "line": 375,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/invoice-requests",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_decide_invoice_request",
+      "line": 396,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/se/invoice-requests/{request_id}/decide",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_list_leads",
+      "line": 316,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/leads",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_create_lead",
+      "line": 328,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/se/leads",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_orders",
+      "line": 477,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/orders",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_order_proxy",
+      "line": 437,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/se/orders/proxy",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_order_detail",
+      "line": 505,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/orders/{order_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_statements",
+      "line": 586,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/statements",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_statement_push",
+      "line": 600,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/se/statements/{statement_id}/push",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_list_visits",
+      "line": 352,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/visits",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_create_visit",
+      "line": 334,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/se/visits",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "se_workspace",
+      "line": 217,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/se/workspace",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_arrival_notices",
+      "line": 860,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/arrival-notices",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_arrival_notice_create",
+      "line": 878,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/sp/arrival-notices",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_inventory",
+      "line": 896,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/inventory",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_invoice_list",
+      "line": 963,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/invoices",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_invoice_upload",
+      "line": 955,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/sp/invoices",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_purchase_orders",
+      "line": 758,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/purchase-orders",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_po_detail",
+      "line": 789,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/purchase-orders/{po_id}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_po_accept",
+      "line": 817,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/sp/purchase-orders/{po_id}/accept",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_delivery_feedback",
+      "line": 839,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/sp/purchase-orders/{po_id}/delivery-feedback",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_settlements",
+      "line": 971,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/settlements",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_statements",
+      "line": 929,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/statements",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_statement_detail",
+      "line": 936,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/statements/{statement_id}",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_statement_confirm",
+      "line": 941,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/sp/statements/{statement_id}/confirm",
+      "placeholder": true,
+      "source": "faces.py"
+    },
+    {
+      "function": "sp_workspace",
+      "line": 724,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/workspace",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "list_aftersales",
+      "line": 778,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/aftersale-requests",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "create_aftersale",
+      "line": 756,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/aftersale-requests",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "aftersale_detail",
+      "line": 792,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/aftersale-requests/{request_id}",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "get_cart",
+      "line": 369,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/cart",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "add_cart_line",
+      "line": 374,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/cart/lines",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "remove_cart_line",
+      "line": 395,
+      "method": "DELETE",
+      "path": "/erp/supply-chain/v1/ue/cart/lines/{line_id}",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "price_preview",
+      "line": 402,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/cart/price-preview",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "list_invoice_requests",
+      "line": 719,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/invoice-requests",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "create_invoice_request",
+      "line": 738,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/invoice-requests",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "list_orders",
+      "line": 492,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/orders",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "create_order",
+      "line": 439,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/orders",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "order_detail",
+      "line": 545,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/orders/{order_id}",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "order_fulfillment",
+      "line": 564,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/orders/{order_id}/fulfillment",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "trigger_fulfillment",
+      "line": 594,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/orders/{order_id}/fulfillment",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "list_categories",
+      "line": 321,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/product-categories",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "list_products",
+      "line": 281,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/products",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "product_detail",
+      "line": 343,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/products/{product_id}",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "create_reconciliation",
+      "line": 679,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/reconciliations",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "get_reconciliation",
+      "line": 702,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/reconciliations/{task_id}",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "list_statements",
+      "line": 632,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/statements",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "statement_detail",
+      "line": 643,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/ue/statements/{statement_id}",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "confirm_statement",
+      "line": 649,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/ue/statements/{statement_id}/confirm",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "wh_document",
+      "line": 2398,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/wh/documents/{ref}",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_confirm",
+      "line": 2443,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/wh/documents/{ref}/confirm",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_reject",
+      "line": 2521,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/wh/documents/{ref}/reject",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_list_issues",
+      "line": 2304,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/wh/issues",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_create_issue",
+      "line": 2291,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/wh/issues",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_list_receipts",
+      "line": 2283,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/wh/receipts",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_create_receipt",
+      "line": 2270,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/wh/receipts",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_list_stocktakes",
+      "line": 2347,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/wh/stocktakes",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_create_stocktake",
+      "line": 2334,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/wh/stocktakes",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_list_transfers",
+      "line": 2327,
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/wh/transfers",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "wh_create_transfer",
+      "line": 2311,
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/wh/transfers",
+      "placeholder": false,
+      "source": "faces.py"
+    },
+    {
+      "function": "health",
+      "line": 250,
+      "method": "GET",
+      "path": "/health",
+      "placeholder": false,
+      "source": "app.py"
+    },
+    {
+      "function": "health",
+      "line": 251,
+      "method": "GET",
+      "path": "/healthz",
+      "placeholder": false,
+      "source": "app.py"
+    }
+  ],
+  "schema": "erp-coverage-evidence/v1"
+}

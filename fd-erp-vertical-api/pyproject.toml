@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fd-erp-vertical-api"
+version = "0.1.0"
+description = "ERP 行业垂直 REST 服务面（add-supply-chain-vertical 任务 6.5）：UE 订货台 19 端点 + pageset 授权端点，数据面零旁路——全部业务读写经 fd-erp-vertical-templates 驱动 + KernelClient 工具面。"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "FindDataTechnology" }]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "fd-erp-vertical-templates",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "psycopg[binary]>=3.1",
+    # 内核包（sys.path 引入，未进打包依赖）自 optimize-erp-solution 6.1 起在 import
+    # 时就需要 prometheus_client；这里显式声明，否则「本地能跑 = CI 能跑」不成立。
+    "prometheus_client>=0.20",
+]
+# 生产 MCP 形态的运行时依赖：McpKernelClient 懒导入 fastmcp
+# （ERP_KERNEL_TRANSPORT=mcp）。模板包只把它列为 dev extra，故本包显式声明，
+# 使「本地跑得到 = 镜像里装得上」（serve-erp-vertical-api 1.1 实锤）。
+mcp = [
+    "fastmcp>=2",
+]
+
+[project.scripts]
+fd-erp-vertical-api = "fd_erp_vertical_api.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["fd_erp_vertical_api*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

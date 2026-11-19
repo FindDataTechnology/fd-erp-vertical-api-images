@@ -1,0 +1,104 @@
+{
+  "schema": "fd-erp-vertical-api/planned-surfaces/v1",
+  "generated_by": "scripts/planned_surfaces.py (AST 派生，勿手改)",
+  "source_files": [
+    "fd_erp_vertical_api/app.py",
+    "fd_erp_vertical_api/faces.py"
+  ],
+  "count": 8,
+  "by_capability": {
+    "supply-chain.cp": 1,
+    "supply-chain.se": 1,
+    "supply-chain.sp": 6
+  },
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/cp/dock-slots",
+      "capability": "supply-chain.cp",
+      "domain": "dock-slots",
+      "grant": "dock.reserve",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "仓库作业编排月台资源建模（时段目录 + 占用计算）",
+      "source": "fd_erp_vertical_api/faces.py:1160"
+    },
+    {
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/se/statements/{statement_id}/push",
+      "capability": "supply-chain.se",
+      "domain": "statements",
+      "grant": "statement.confirm.proxy",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "底座端内消息通道（notify 车道）接入后实施推送留痕；客户确认门=UE /ue/statements/{id}/confirm（内核 proposal 车道）",
+      "source": "fd_erp_vertical_api/faces.py:600"
+    },
+    {
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/invoices",
+      "capability": "supply-chain.sp",
+      "domain": "invoices",
+      "grant": "invoice.upload",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "同 POST /sp/invoices（上传历史与核验进度 read 面）",
+      "source": "fd_erp_vertical_api/faces.py:963"
+    },
+    {
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/sp/invoices",
+      "capability": "supply-chain.sp",
+      "domain": "invoices",
+      "grant": "invoice.upload",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "中台文件服务上传契约 + 发票查验/勾兑车道 + 金蝶连接器回写（contract-only）",
+      "source": "fd_erp_vertical_api/faces.py:955"
+    },
+    {
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/settlements",
+      "capability": "supply-chain.sp",
+      "domain": "settlements",
+      "grant": "statement.read",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "金蝶付款/结算回写 read 面（只读，无任何支付/账户操作）",
+      "source": "fd_erp_vertical_api/faces.py:971"
+    },
+    {
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/statements",
+      "capability": "supply-chain.sp",
+      "domain": "statements",
+      "grant": "statement.read",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "金蝶 provider 往来面拉取（任务 3.1）→ 账本内核计算应付 → 单据级对账单派生 + 确认门（内核自平核对 proposal，同 UE 契约）",
+      "source": "fd_erp_vertical_api/faces.py:929"
+    },
+    {
+      "method": "GET",
+      "path": "/erp/supply-chain/v1/sp/statements/{statement_id}",
+      "capability": "supply-chain.sp",
+      "domain": "statements",
+      "grant": "statement.read",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "同 GET /sp/statements",
+      "source": "fd_erp_vertical_api/faces.py:936"
+    },
+    {
+      "method": "POST",
+      "path": "/erp/supply-chain/v1/sp/statements/{statement_id}/confirm",
+      "capability": "supply-chain.sp",
+      "domain": "statements",
+      "grant": "statement.read",
+      "http_status": 501,
+      "error_code": "NOT_IMPLEMENTED",
+      "planned_lane": "金额同源到位后确认门=内核自平核对 proposal（超时/失败不假报成功）；异议进处置车道",
+      "source": "fd_erp_vertical_api/faces.py:941"
+    }
+  ]
+}

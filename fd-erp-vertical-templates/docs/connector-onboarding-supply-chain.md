@@ -1,0 +1,443 @@
+# 供应链垂直 · 萬星连接器立项材料（金蝶云星空 / 支付渠道 / 客户 WMS）
+
+> 对应 OpenSpec change `add-supply-chain-vertical` tasks 3.1/3.2/3.3 的「评估与立项」面。
+> 核验日期：2026-11-07。核验对象：`open-connector-mt` 仓库 `catalog/apps-index.json`（version 1，providers 计 1568）与 `catalog/apps/*.json`。核验过程只读。
+> 客户中性纪律：本文不出现具体客户名，统称「锚点客户」。
+
+## 总纪律（三节共用）
+
+- 载体唯一（design D2）：全部外部系统对接经萬星·连接器（open-connector-mt，多租户、凭证不出库），ERP 线零自建连接器框架。
+- `open-connector-mt` 有独立 openspec 根（`openspec/specs/`：multi-tenancy / tenant-auth / tenant-console / tenant-mcp）；provider 新增按其仓库流程立项，本仓只立契约与需求。
+- 仓库硬约束摘录（`open-connector-mt/openspec/config.yaml`）：「Never modify src/providers/** (the 1.38M-LOC catalog belongs to upstream)」；provider 定义源在 `src/providers/<service>/definition.ts`，经 `npm run generate:catalog` 生成 `catalog/apps/*.json`（`CONTRIBUTING.md` §Adding Providers）。**新增 provider 与该硬约束存在张力**（新增即触碰 `src/providers/**` 路径面），立项时须在 open-connector-mt 侧裁定载体：上游新增（随 upstream 双周合并节奏）或分叉侧例外（design 规则要求 proposal 写明哪些 upstream 文件被触碰、为何不可避免）。
+
+---
+
+## 一、金蝶云星空 provider
+
+### 1.1 目录现状核验（如实）
+
+- Provider 文件：`catalog/apps/kingdee.json`（index 中 `file: kingdee.json`，唯一金蝶 provider，无 kingdee_k3/kingdee_cosmic 等变体）。
+- displayName `Kingdee`，categories `["Finance"]`，homepageUrl `https://www.kingdee.com/cn`。
+- 凭据形态：authTypes `["custom_credential"]`，6 字段——`baseUrl`（企业应用 URL，placeholder `https://erp.example.com/k3cloud/`）、`dataCenterId`（账套 ID）、`username`（集成用户）、`applicationId`（第三方应用 ID）、`applicationSecret`（secret，密码态）、`localeId`（可选，默认 2052 简体中文）。全部字段标注为在金蝶云·星空企业端配置第三方应用并授权集成用户。
+- 服务端实现（`src/providers/kingdee/runtime.ts`）走星空 Web API：`Kingdee.BOS.WebApi.ServicesStub.AuthService.LoginByAppSecret.common.kdsvc` 登录，会话态（SessionId/KDSVCSessionId）。
+- Action 面：**12 个 action，全部是 formId 驱动的通用单据操作**，无业务域专用 action：
+
+| action id | operationType | 说明 |
+|---|---|---|
+| `kingdee.query_records` | read | 按字段/过滤/行偏移查询单据 |
+| `kingdee.get_record` | read | 按内码/编号查看单据 |
+| `kingdee.query_report` | read | 按表单过滤查报表 |
+| `kingdee.save_record` | destructive | 保存单据（含更新） |
+| `kingdee.batch_save_records` | destructive | 批量保存（保留部分成功） |
+| `kingdee.draft_record` | destructive | 保存草稿 |
+| `kingdee.submit_records` | write | 提交审批 |
+| `kingdee.audit_records` | write | 审核 |
+| `kingdee.unaudit_records` | destructive | 反审核 |
+| `kingdee.push_records` | write | 按转换规则下推（源单→目标单） |
+| `kingdee.allocate_records` | write | 主数据分配到目标组织 |
+| `kingdee.delete_records` | destructive | 按内码/编号删除 |
+
+- Triggers 面：`src/providers/kingdee/` 无 trigger 定义（全仓 20 个 trigger 定义分布于 airtable/feishu_app_bot/github/gitlab/gmail/googlecalendar/googledrive/googlesheets/linear/notion/one_drive/outlook/shopify/slack/stripe/telegram/woocommerce/zendesk/triggercmd），**金蝶无 webhook/轮询 trigger**。
+
+### 1.2 覆盖面对位（tasks 3.1 需求：凭证推送 / 往来 / 发票面 / 日终双边对账）
+
+- **凭证推送**：`push_records`（下推）+ `save_record`/`submit_records`/`audit_records` 可覆盖「源单→目标单→凭证」链路，但前提是星空侧预置了对应单据转换规则；provider 无「凭证模板/自动生成凭证」专用 action。需按锚点客户单据流逐一验证转换规则是否在客户星空实例中存在。
+- **往来（应收/应付/对账）**：应收单/应付单等往来单据经 `query_records`/`save_record`/`push_records`+审核链覆盖；`query_report` 可查表单报表（对账单类报表可用性取决于客户实例报表注册）。日终双边对账（中台台账 ↔ 星空）的数据面可用 `query_records`/`query_report` 拉取，**对账计算在中台侧做**（账本内核 `run_reconciliation` 同源），非连接器职责。
+- **发票面**：销售/采购发票作为单据经通用 action 保存/下推/审核可覆盖「发票回写」；**开票（税控/发票云直连）不在 provider action 面内**，如锚点客户需要直连开票，属「需上游新增 action」。
+- **结论**：通用操作面对 tasks 3.1 的凭证推送/往来/发票回写**可用但不保证够用**——缺口不在 action 数量而在业务语义（转换规则、凭证模板、开票直连），立项时按锚点实例逐一验证，缺什么在 open-connector-mt 侧提「需上游新增 action」。
+
+### 1.3 立项要点
+
+1. 接通验证（本仓 tasks 3.1）：以第三方应用凭证接通一个验证实例，走 `query_records`→`save_record`→`submit_records`→`audit_records`→`push_records` 全链；凭证经 custom_credential 注入，验证「凭证不出库」（连接器服务端持有，移动端/编排层零接触）。
+2. 需上游新增 action 的候选清单（按需提出，不预先虚构）：凭证模板自动生成、开票直连、银企直连（若锚点客户要）。
+3. trigger 缺口：星空事件（单据审核完成等）无 webhook trigger；日终对账用轮询（cron 拉取）即可满足，不需要新增 trigger；若后续要事件驱动，按 open-connector-mt trigger 机制（`docs/runtime-api.md` §Provider Triggers，webhook 走 subscription/receive/reconcile）另立。
+
+### 1.4 验收判据
+
+- 用锚点客户的账套（或等价验证实例）完成一次端到端：查一张销售订单（query_records）→ 下推生成下游单据（push_records）→ 提交并审核（submit/audit）→ 报表查询对账数据源（query_report），全程经连接器、凭证不出库、操作留痕可查。
+- 反审核/删除等 destructive action 在策略面被 `allowedActions`/`blockedActions` 正确约束（runtime token 策略，见 `docs/runtime-api.md`）。
+
+### 1.5 跨仓流程注记
+
+- open-connector-mt 独立 openspec 根；本节立项需求（接通验证 + 可能的 action 新增）在 open-connector-mt 侧开 change，按其 rules：proposal 含 Non-goals、说明触碰哪些 upstream 文件及为何不可避免；`TENANCY=off` 行为与 upstream 字节兼容。
+- 目录里的 provider 文件（`catalog/apps/*.json`）是 `npm run generate:catalog` 的生成物，**不要手改生成文件**；改动走 `src/providers/kingdee/definition.ts`。
+
+---
+
+## 二、支付渠道 provider（商户侧，只读 + 回调记录）
+
+### 2.1 目录现状核验（如实）
+
+对 design.md Open Questions「微信支付/支付宝/银联商户侧是否已有目录 provider」的直接回答：**没有**。
+
+- 逐文件与 index 双重检索 `wechat pay / weixin pay / alipay / unionpay / 银联 / 微信支付`：**目录无微信支付、无支付宝、无银联 provider**。命中的 `weixin_*` 均非支付：`weixin_official_account.json`（公众号）、`weixin_bot.json`、`wecom_bot.json`/`wecom_mcp.json`（企业微信）、`weixin_store.json`（微信小店，E-commerce；32 actions 为商品/订单/售后/运费模板面，其 `get_order` 读得到订单 payment 信息，但它是电商平台订单面，不是微信支付商户平台的支付通道面）。
+- 已有的国际/线上 PSP provider（如实列出，均非国内三大渠道）：
+
+| provider 文件 | displayName | auth | action 数 | read/write/destructive | 备注 |
+|---|---|---|---|---|---|
+| `stripe.json` | Stripe | api_key | 18 | 10/5/3 | 客户/商品/价格 CRUD+检索；**另有 `stripe.on_event` webhook trigger（Account Event，`src/providers/stripe/trigger-on-event.definition.ts`）** |
+| `paypal.json` | PayPal | custom_credential(clientId,clientSecret,environment) | 14 | 6/5/3 | |
+| `square.json` | Square | api_key | 6 | 4/2/0 | |
+| `adyen.json` | Adyen | api_key | 6 | 6/0/0 | 纯读 |
+| `checkout_com.json` | Checkout.com | api_key | 4 | 1/2/1 | |
+| `paystack.json` | Paystack | api_key | 8 | 6/2/0 | |
+| `razorpay.json` | Razorpay | api_key | 6 | 4/1/1 | |
+| `payrexx.json` | Payrexx | api_key | 5 | 4/1/0 | |
+| `payhip.json` | Payhip | api_key | 9 | 3/4/2 | |
+| `btcpay_server.json` | BTCPay Server | api_key | 7 | 4/3/0 | |
+
+- 回调/回调记录的机制面：连接器运行时支持 webhook 订阅（`docs/runtime-api.md` §Provider Triggers：subscription 建/收/对账/取消，签名校验、64KiB rawBody、回调记录归属 runtime token+connection），即「回调记录」有平台机制可落，但**前提是对应 provider 有 trigger 定义**——PSP 中仅 Stripe 有。
+
+### 2.2 与 tasks 3.2 的对位（只读流水 + 回调记录 + 日终渠道对账差异清单）
+
+- 需求面是微信支付/支付宝/银联商户侧：**目录无对应 provider，需新增**（立项结论，非可选项）。
+- 新增面最小集：微信支付（商户平台 APIv3，证书/平台证书 + APIv3 密钥，账单 downloadbill/report query），支付宝（开放平台，商户密钥/公钥证书，对账单下载），银联（若锚点客户有）。均为**只读 + 回调记录**纪律：不发起支付指令、不碰退款写操作（资金红线 D4：在线支付=只读+回调记录+日终差异清单，对外付款走金蝶/持牌通道）。
+- 若仅做国际卡收单场景（锚点客户无此需求迹象），Stripe/PayPal 现状可用——如实记录，不作为国内渠道缺位的替代。
+
+### 2.3 立项要点
+
+1. 在 open-connector-mt 按其 SDK/definition 流程新增 `wechatpay`/`alipay`（命名以其仓库规范为准）provider：auth 用 custom_credential（商户号/商户私钥证书/平台证书/APIv3 密钥等），action 首版限 read（账单下载、交易查询）+ trigger（支付结果回调，走既有 subscription/receive 机制做回调记录）。
+2. 回调记录落库面属连接器运行时既有能力（subscription + receive），ERP 侧消费经同源数据面，不建平行取数。
+3. 日终渠道对账差异清单：渠道账单（provider read）↔ 中台台账（账本内核），计算在中台，连接器只供数据。
+
+### 2.4 验收判据
+
+- 微信支付：以商户号接通，拉取一天账单（read），一笔真实支付的回调经 trigger subscription 落记录、签名校验通过；全程无任何写操作面被调用。
+- 支付宝：同构（账单下载 + 回调记录）。
+- 差异清单：渠道账单 vs 中台台账对一次日终，差异条目可解释。
+
+### 2.5 跨仓流程注记
+
+- provider 新增在 open-connector-mt 侧立项（其 openspec 流程，proposal 需声明触碰 `src/providers/**` 新路径的理由——新增文件而非改 upstream 文件，属硬约束的解释空间，须其仓裁定）。
+- 三大渠道的官方 API 侧资质（商户号、证书、回调域名白名单）由锚点客户/商户侧提供，ERP 线不代持。
+
+---
+
+## 三、客户 WMS provider（无目录 provider，按连接器 SDK 新增）
+
+### 3.1 目录现状核验（如实）
+
+- 按文件名与内容双检索 `wms / warehouse management / warehouse / fulfillment / 3pl`：**目录无任何 WMS 类 provider**。无 ShipHero、Peoplevox、Logiwa、Infoplus、3PL Central、Fishbowl、通天晓、科箭、C-WMS 等国内外 WMS 品牌任何一种。
+- 最接近的仓储/物流面 provider（均不是 WMS，如实区分）：
+  - `ship_bob.json`（ShipBob，3PL 履约）：api_key，5 actions 全 read（inventory levels / channels / locations / products）——只读库存/商品面，无出入库作业指令面，不是通用 WMS。
+  - `aftership.json`（9 actions）、`shippo.json`（8 actions）、`17track.json`（4 actions）：包裹追踪/面单地址面，属物流轨迹不是仓储作业。
+- 结论：**客户 WMS（品牌与接口形态待锚点客户确认，design.md Open Questions 挂账中）无目录 provider 可用，必须按连接器 SDK 新增**——与 change tasks 3.3 的判断一致，核验予以坐实。
+
+### 3.2 立项要点
+
+1. 前置依赖：锚点客户 WMS 品牌与接口形态（HTTP API/中间表/文件交换？有无 webhook？）未定——**provider 新增工作量无法在形态确认前报价**，本节只立边界。
+2. 新增边界（design D2）：载体是萬星连接器，资产归连接器项目（open-connector-mt），ERP 线出需求与验收判据，不自建对接框架。
+3. 需求面（来自 erp-vertical-supply-chain spec）：出入库事件回传（入库任务完成/出库指令执行）、库存单向同步读（中台→WMS 单向写、WMS→中台事件回传；编排层 MUST NOT 直接写外部 WMS 台账）、账实差异数据源。首版 action 形态建议：read（库存查询/单据状态）+ write（出入库指令投递，仅经白名单）+ trigger（作业事件回传，若 WMS 支持 webhook；否则 poll）。
+4. 接口形态是中间表/文件交换时，先确认连接器 SDK 对该形态的支持面（现行 1568 provider 以 HTTP API 为主），不支持则升级为 SDK 能力扩展项，仍在 open-connector-mt 侧立项。
+
+### 3.3 验收判据
+
+- 形态确认后补全本节（挂账）：以客户 WMS 测试环境完成「出库指令投递 → 作业完成事件回传 → 库存读对平」一轮闭环，账实日终一致（差异清单驱动）。
+
+### 3.4 跨仓流程注记
+
+- 同上：open-connector-mt 独立 openspec 根立项；proposal 按其 rules 写 Non-goals 与 upstream 触碰声明；生成目录文件不手改。
+- 本仓（fd-erp-vertical-templates）侧只维护「需求 + 验收判据 + 状态」的注记，open-connector-mt 侧 change 落地后回填 3.3。
+
+---
+
+## 状态汇总（跨仓工件核对用，tasks 8.4 引用）
+
+| 项 | 目录现状 | 本 change 所需 | 结论 |
+|---|---|---|---|
+| 金蝶云星空 | `kingdee.json` 在目录，12 通用 action，K3Cloud Web API，无 trigger | 接通验证（3.1）；专用 action 按需上游新增 | 可启动接通验证 |
+| 支付渠道（微信/支付宝/银联） | **无**；国际 PSP 有 10 家（仅 Stripe 有 webhook trigger） | 商户侧只读 provider + 回调记录（3.2） | 需在 open-connector-mt 新增 |
+| 客户 WMS | **无**任何 WMS provider | 按连接器 SDK 新增（3.3） | 需新增；工作量待客户接口形态确认 |
+
+> 上表是 2026-11-07 的核验快照，**其中两行已被现实推翻**（支付渠道已新增、WMS 类 provider 已存在）。
+> 现行结论以 §四 为准；此表保留原样以对齐已归档的 tasks 记述，不再逐行改。
+
+---
+
+## 四、2026-11-08 复核：目录增量与「声明的是角色、不是 provider」这个真问题
+
+> 复核对象：`open-connector-mt/catalog/apps/`（**1570** provider）与 `catalog/apps/<service>.json` 的
+> `actions[].operationType`。只读复核，未改任何一侧。
+> 触发原因：`add-connector-bindings`（paas，2026-11-08 归档）落地后，绑定解析改用连接器
+> `catalog-coverage` 判四态，供应链包的 5 条声明里有 3 条当场报 `unwired`——需要分清
+> 「目录真的没有」还是「声明写错了」。
+
+### 4.1 对上表两行的更正
+
+- **支付渠道：已有。** `wechatpay.json`（`WeChat Pay`，Finance，`custom_credential`，**2 个 action 全 read**）
+  与 `alipay.json`（`Alipay`，同构，2 个 action 全 read）已在目录里，即 §二「目录无微信支付/无支付宝」
+  的结论作废（`add-supply-chain-provider-onboarding` 落地所致，见 tasks 3.2 注记）。银联仍无。
+- **WMS：已有最接近项。** `wangdian.json`（`Wangdian ERP`，`custom_credential`，**7 个 action 全 read**）。
+  §三 当时按「wms / warehouse / 3PL 品牌名（含通天晓、科箭、C-WMS）」检索，**漏了拼音 id**，
+  于是得出「无任何 WMS 类 provider」。旺店通是订单/库存/商品面的 SaaS，
+  对「库存单向同步读」这一条需求（§三 3.2 的 read 面）够用；出入库**作业指令**面仍无。
+- **承运商：§一到§三 从未核验过这一类**（本包 `carrier-portal` 的立项材料缺失）。现目录有
+  `sf_express.json`（`SF Express`，**155 个 action：59 read / 86 write / 10 destructive**）与
+  `kuaidi100.json`（`Kuaidi100`，9 个：7 read / 1 write / 1 destructive，`api_key`），
+  「运单/轨迹只读」这一面可直接兑现。
+
+### 4.2 真问题：包里声明的是角色，不是 provider
+
+`supply-chain-connector-pack` 的 5 条 `connector_bindings`（两份副本逐字节一致：本仓
+`templates/supply-chain/connector-pack/pack.json` 与 `fd-appliance/tenants/supply-chain/content/erp-templates/supply-chain-connector-pack.json`）：
+
+| binding key | 声明 provider | 目录里存在？ | 绑定解析结果 |
+|---|---|---|---|
+| `kingdee-cloud` | `kingdee` | 有（3 read / 4 write / 5 destructive） | `satisfied`（接通后） |
+| `payments-merchant` | `wechatpay`（备选 `alipay`） | 有（各 2 read） | `satisfied` |
+| `wms-snapshot` | `wms` | **无此 service id** | `unwired`（永久） |
+| `supplier-portal` | `supplier-portal` | **无此 service id** | `unwired`（永久，optional） |
+| `carrier-portal` | `carrier-portal` | **无此 service id** | `unwired`（永久，optional） |
+
+三条 `unwired` 里，**两条不是覆盖缺口而是声明错位**：`wms` / `carrier-portal` 是业务角色名，
+连接器的 service id 是具体厂商（`wangdian` / `sf_express` / `kuaidi100`）。按现协议
+`provider` 必须写目录 service id，所以这三条无论客户接什么账号都永远关不上——
+`wms-snapshot` 还是**非 optional**，会长期计入安装门的 `unresolved`。
+
+### 4.3 建议（**已裁决，见 §4.7**；本节保留为决策史）
+
+> 两条候选里选了路线 2（角色 → provider 映射），已在 paas 侧实现并归档
+> （`add-connector-role-mapping`，2026-11-08）。下面原文里的「保持 optional / 降 optional」
+> 与「待拍板」都已被 §4.7 取代，读结论请直接跳到 §4.7/§4.8。
+
+- `supplier-portal`：目录无任何 SRM/供应商门户 provider，**保持 optional 并如实报缺口**；
+  新增 provider 属对侧立项，不在本仓绕。
+- 已于 2026-11-08 落地的一条（不需要猜客户品牌）：**`wms-snapshot` 降为 `optional: true`**，
+  并把理由写进**本文档**（不是绑定 `note`，见下）。原因：它原先非 optional 却指向目录里不存在的
+  `wms`，安装门会永久挂一条「未解决」——而这条**用户接任何账号都关不上**，属于错误指引而不是
+  能力缺口。降 optional 后它在状态面上如实显示为 `unwired`（能力缺口），不再冒充待办。
+- **`note` 是面向客户的字段，不是工程日志**：首版把它写成「目录无 wms、最近项 wangdian 只有 read 面」
+  这类内部分析，等于把供应链短板印在货架上。已改为一句对外陈述。改 `note` 时先问：
+  这句话给客户看是否成立、是否泄露内部分析。
+- 当时待拍板的两条（**已选 2**）：
+  1. `wms`/`carrier-portal` 是否**写死真厂商**（`wangdian` / `sf_express` + 备选 `kuaidi100`）：
+     面向「用这几个厂商的客户」直接可用，换厂商要改包。
+  2. 是否**加一层角色到 provider 的映射**（客户自选自己的 WMS 品牌）：表达力强，但是新机制
+     （绑定声明→实例映射的落点、状态面口径、安装门语义都要重新定义），成本高一个量级。
+     两条路线不叠加。
+
+### 4.4 顺带的产品事实（供定价/承诺口径用）
+
+- 供应链包 5 条绑定里，**声明侧可兑现 4 条**：金蝶 + 支付本来就指向真实 provider；
+  WMS / 供应商门户 / 承运商门户三条改为角色绑定后，能否兑现取决于**客户自己连了什么**
+  （客户连了自己的 WMS 并且该 provider 的操作面覆盖所需类目 ⇒ 可兑现），不再取决于
+  目录有没有同名 provider。剩下的不确定性从"我们的目录覆盖"变成"客户的账号"，这是
+  谈单时可以说清的一件事，而不是一句"暂不支持"。
+- 五条绑定全部只申请 `read`/`write`，**没有一条申请 `destructive`**——金蝶的 5 个 destructive
+  action（保存/删单/反审核等）不在绑定授权面内，写面只到「提交/审核/下推」这类 write。
+
+### 4.5 机器门：这坑不许再踩第二遍
+
+「声明的 provider 在目录里不存在」这类错误此前**没有任何一层能拦住**：paas 的
+`lib/pack-manifest.js` 只校验形状（它在 CI 里读不到连接器目录），绑定解析只会在运行时
+如实报 `unwired`——而那时包已经发布了。所以在本仓加了一道门：
+
+- `scripts/refresh_connector_catalog_ids.py` → 把目录 `catalog/apps/*.json` 的 `service`
+  集快照进 `tests/fixtures/connector-catalog-service-ids.json`（1570 个 id；`--check` 只比对）。
+  手法与 paas `lib/wire-tool-risk.js` 一致：快照入库、本地刷新、有 checkout 时逐值比对。
+- `tests/test_connector_binding_providers.py`：认的是**显式开关**，不是"名字看起来像不像厂商"——
+  ①`providerRole: true` ⇒ provider 必须是 `ROLE_PROVIDERS` 里登记过的角色名（带 `reason` +
+  `decision`），且不得声明 `alternativeProviders`（映射由客户选定，没有回退）；
+  ②没有该开关 ⇒ provider（含备选）必须 ∈ 目录快照，角色名不能再靠"看起来像业务词"混过；
+  ③`providerRole: true` 而 provider 恰是真实 service id ⇒ 判红（那会把一个厂商写成角色）；
+  ④登记项不许腐坏（没人用就得删）。
+  **2026-11-08 起「角色名只允许出现在 optional 绑定上」这条已废止**（见 §4.7）：非 optional
+  的角色绑定现在可被客户选定后闭环，不再是"用户处理不了的项"。
+- 负向实证（都验过红再恢复）：①塞一个 `provider: "erp-system"` 的假声明 → 门变红并指名
+  `templates/zz-negtest-connector-pack.json: erp-thing → provider 'erp-system' 不在目录`；
+  ②把 `wms-snapshot` 的 `providerRole` 删掉、只留 `provider: "wms"` → 门变红并指名
+  「角色名缺 providerRole: true」；③给角色绑定加 `alternativeProviders: ["wangdian"]` → 判红。
+  全量 109 passed / 15 skipped。
+
+
+### 4.6 市场侧现状（2026-11-08 只读核对）
+
+- 已发布包 `y8gnMHFMze-Mylsd6JXpkA`（市场 v1，作者 aloadtree@gmail.com）实读
+  `GET /api/packs/<id>`，与源 `templates/supply-chain/connector-pack/pack.json` **逐字段比对**：
+  只有 `connector_bindings` 一处不同，就是 `wms-snapshot` 的 `optional`（市场 false / 源 true）
+  与随之改写的 `note`。**市场仍挂着「非 optional 但指向不存在 provider」的旧声明**，
+  即本次修复尚未到达用户；重发走版本通道（`publish_pack.py <pack.json> --author … --pack-id
+  y8gnMHFMze-Mylsd6JXpkA`，限流 10 次/时），属对外发布动作，待拍板。
+- 漂移哨此前**看不见**这个包：`fleet-packs/scripts/check_drift.py` 把源路径硬编码成
+  `REPO/<src>/manifest.json`，而本仓模板包在 finddata 根、文件叫 `pack.json`，于是常年报
+  `源缺失` 而不对拍。已修为四路解析（fleet-packs 仓 / finddata 根 × manifest.json / pack.json），
+  修后四包三绿一真红——真红就是上面这条 `connector_bindings`。
+- 重发时别忘：`fd-appliance/tenants/supply-chain/content/erp-templates/supply-chain-connector-pack.json`
+  必须与源逐字节一致（`tests/test_manifest.py::test_appliance_copies_match_template_sources`），
+  paas 侧的 `test/fixtures/connector-bindings/supply-chain-after.json` 同批跟上。
+
+### 4.7 角色绑定落地（2026-11-08，路线 2 已建成）
+
+paas 侧 `add-connector-role-mapping` 已归档，绑定可以用**角色形态**声明：
+
+```json
+{ "key": "wms-snapshot", "provider": "wms", "providerRole": true, "allowOperations": ["read"] }
+```
+
+- `providerRole: true` 是显式开关：有它，`provider` 按**角色名**解释（不再去目录找同名
+  service id）；没有它，语义与以前完全一致。
+- 客户在连接器卡片的该行下拉框里**选定自己实际在用的系统**（候选只列他**已连通**、
+  且操作面覆盖所需类目的那些；覆盖不足的会带缺口原因列出，不假装可选）。选定后绑定
+  就地满足、可授权，不用我们改包。
+- 未选定 ⇒ 状态面报 **`unmapped`（待选系统）**，与 `unwired`（我们的目录缺能力）、
+  `missing`（客户选了但没连）三种状态、三种修法分开计数。这是本条路线的全部价值：
+  把"我们没覆盖"和"你还没说"分开。
+
+**本仓这一版做了什么（pack 1.0.1 → 1.1.0）：**
+
+| 绑定 | 之前 | 现在 |
+| --- | --- | --- |
+| `wms-snapshot` | `provider: "wms"`，无开关，永久 `unwired`（故已降 optional） | `providerRole: true`，客户选定即可满足；仍 optional |
+| `supplier-portal` | 同上 | `providerRole: true`；仍 optional |
+| `carrier-portal` | 同上 | `providerRole: true`；仍 optional |
+| `kingdee-cloud` / `payments-merchant` | 真实 service id | 不变 |
+
+**为什么三条仍是 optional：** optional 回答的是"这个包能不能在没有它的情况下用"，与
+"能不能被满足"是两件事。角色绑定让它们**可以被满足**了，但"仓配分销是否必须接 WMS"
+是产品范围问题，要有锚点客户的真实诉求再改（改法：把该绑定 `optional` 置 false，
+机制侧无需改动——paas 的 `add-connector-role-mapping` 用例已覆盖非 optional 未映射
+即可关闭的路径）。别把范围决策混进机制改造里一次做完。
+
+### 4.8 市场重发与三处副本（执行清单）
+
+改这个包时**四处必须同步**，少一处就有一条门变红（都是既有门，不是新加的）：
+
+1. 源：`templates/supply-chain/connector-pack/pack.json`
+2. 整机镜像：`fd-appliance/tenants/supply-chain/content/erp-templates/supply-chain-connector-pack.json`
+   （**逐字节一致**，`tests/test_manifest.py::test_appliance_copies_match_template_sources` 守着）
+3. paas 夹具：`paas/test/fixtures/connector-bindings/supply-chain-after.json`
+   （`scripts/test-connector-bindings-manifest.mjs` 断言它过 `validatePackManifest`）
+4. 市场：`fleet-packs/scripts/publish_pack.py <源 pack.json> --author <email> --pack-id y8gnMHFMze-Mylsd6JXpkA`
+   （出 v3；限流 10 次/时），发完用 `fleet-packs/scripts/check_drift.py` 复核源=市场逐字段一致。
+
+## 五、另两条行业线的连接器包（2026-11-08 补齐机器字段并上架）
+
+此前只有供应链包的连接需求是机器可读的（`connector_bindings`）；餐饮连锁与跨境电商两个
+对账连接器包把需求写在旧的 `connectors` 说明字段里，**壹座的绑定链完全看不见它们**——
+没有安装门、没有状态面、没有范围授权、也没有「选择你的系统」。两个包都还没上架（市场台账
+里只有 supply-chain-connector-pack），所以这是上市前的补齐，无客户可见变更。
+
+补法与本仓既有的判断一致：**能写真 id 的写 id，品牌随客户变的写角色**。
+
+| 包 | 绑定 | provider | 形态 | optional |
+| --- | --- | --- | --- | --- |
+| 餐饮连锁 | `pos-sales` | `pos` | 角色 | 是 |
+| 餐饮连锁 | `payments-merchant` | `wechatpay`（备选 `alipay`/`meituan`） | 真 id | 是 |
+| 餐饮连锁 | `delivery-settlement` | `meituan` | 真 id | 是 |
+| 跨境电商 | `shopify-store` | `shopify` | 真 id | 是 |
+| 跨境电商 | `cn-commerce-store` | `cn-commerce` | 角色 | 是 |
+
+两处判断，都是「如实」而不是「好看」：
+
+1. **餐饮三条全 optional**：包自己写明未适配厂商走导出文件替代通道，所以 POS 未接通不能
+   阻塞安装；支付/外卖的 live 面在所有文档里都是「实测后声明」，写成必接就等于承诺没测过
+   的东西。
+2. **跨境两条全 optional，且不声明拼多多**：跨境对账面对的是两个互斥客群（只做 Shopify
+   的、只做国内平台的），任何一条写必接都会让另一半客群装不上；拼多多上游 schema 缺失，
+   声明了就是一条永远关不上的缺口——按既有裁决（crm-board 2026-10-30）不声明。
+3. `meituan` 同时出现在支付备选与外卖结算两处：两者是**两个面**（外卖结算单 ≠ 支付流水），
+   分别对账，故用两条 key 表达，而不是一条绑定兜住两件事。
+
+同时补了一条门的盲点：`tests/test_manifest.py` 的 appliance 逐字节镜像门原本只扫
+supply-chain 一个租户，另外两个租户的副本落后时门还是绿的（实测：crossborder 与
+restaurant-chain 的连接器包副本都已落后于模板）。现已扩到三租户 × 全部副本，并做了
+负向实证（改坏 crossborder 副本 → 门红并指名）。
+
+### 5.1 上架结果（三包均已在市场）
+
+| 包 | packId | 首版 | 现状 |
+| --- | --- | --- | --- |
+| 供应链连接器包 | `y8gnMHFMze-Mylsd6JXpkA` | v1 → 现 v3 | 角色绑定 + 纠正声明 |
+| 餐饮连锁连接器包 | `3RZRBdc66rKdLV5I8tuKIg` | v1 → 现 v2 | 角色 `pos` + 支付真 id（v2 面级纠错：删 `delivery-settlement`、备选去 `meituan`） |
+| 跨境电商连接器包 | `cv0kj9mRHGrz6nNMA7glVg` | v1 → 现 v2 | 真 id `shopify_admin` + 角色 `cn-commerce`（v2 面级纠错：`shopify` → `shopify_admin`） |
+
+> 本表与 §8.1 的口径同源：`publish-record.json` 是唯一出处，改市场版本先改记录、
+> 再跑 `publish-notes` 重写 pack 三处注记；文档、记录、市场台账（兄弟仓
+> `fleet-packs/README.md` 机器台账）三处不一致即判红。
+
+上架踩到的门（记下来省下一次）：**官方身份发新包时市场强制要求 en 展示面全覆盖**
+（`name` / `description` / `tags` / 每个 skill 的 `description`），缺一项即
+`422 official_en_coverage_incomplete`，报错里会逐项点名缺哪几个。两包原本只有中文，
+补了 `i18n.en` 才通过。补译原则：照中文原文逐句译，**不新增承诺**——"未实测不宣称 live"
+"上游 schema 缺失不提供"这类守界话必须原样带过去，否则英文面比中文面承诺更多。
+
+三包上架后都过 `fleet-packs/scripts/check_drift.py`（源=市场逐字段一致）。
+
+## 六、角色名是公共词汇，已有受控词表
+
+角色名跨包共享（`connector_role_mappings` 以 `(email, role)` 为键）：同一个角色在餐饮包里叫
+`pos`、在下一个行业包里也必须叫 `pos`，否则客户要为同一件事回答两次。词表与命名规则见
+[`connector-role-vocabulary.md`](connector-role-vocabulary.md)，由两道 pytest 门守着：
+
+- 角色名必须全小写 kebab-case；
+- 角色名不得等于目录里真实存在的 service id（以后目录新增同名 provider 时当场变红，逼我们
+  在「改角色名」与「改真 id」之间做决定，而不是让同一个字符串有两种含义）；
+- 文档词表与 `ROLE_PROVIDERS` 登记表必须逐项一致——**新增角色两处都改**，这是刻意的摩擦，
+  防止顺手起个近义词就把词汇散掉。
+
+命名上有一条自查过的结论：现有五个角色名（`wms`/`supplier-portal`/`carrier-portal`/`pos`/
+`cn-commerce`）**正好等于连接器车道名**（`pos.py`、`cn_commerce.py` 等），所以不要为了
+"更好听"改成 `marketplace-cn` 之类——那会制造名实不符，排障时要在两个词之间翻译。
+
+## 七、面级对位：类级绿灯 ≠ 这个面能用（2026-11-08 抓到的两个真错）
+
+上架后发现两处**我自己写错的 provider**，都是"类级覆盖通过、面根本不对"：
+
+| 绑定 | 我原来写的 | 目录实际 | 现在的处置 |
+| --- | --- | --- | --- |
+| 餐饮 `delivery-settlement` | `meituan` | 唯一 read 是 `query_travel`（**酒旅/机票**） | **删除该绑定**：目录没有任何外卖结算面 |
+| 餐饮 `payments-merchant` 备选 | 含 `meituan` | 同上 | 备选只留 `alipay` |
+| 跨境 `shopify-store` | `shopify` | 13 个 read **全是博客/页面**；订单库存在 `shopify_admin`，payouts **一个动作都没有** | 换 `shopify_admin`，surface 与 note 去掉"收款 payouts"承诺 |
+
+危险点在于 paas 的覆盖检查是**类级**的：`meituan` 有一个 read 动作，所以"只读"声明会被判
+`satisfied` 并铸出令牌——客户会拿到一张只能查机票的凭证，而卡片说"外卖结算已接通"。
+这不是状态映射错，是**声明在撒谎**。
+
+于是加了一条面级门（`docs/connector-binding-surfaces.md` + 两条 pytest）：
+**每条固定 provider 的绑定都必须点名"哪个动作承担这个面"**，门会拿本机 `open-connector-mt`
+checkout 逐个核对动作真的存在。角色绑定不在此列（面由客户选的系统决定）。
+负向实证：把 `meituan` 那条塞回去 → 门红并指名 `restaurant-chain/delivery-settlement（provider=meituan）`。
+
+顺带一条产品事实：`pos` 与 `cn-commerce` 两个角色**当前候选集为空**——目录里没有任何门店 POS，
+也没有淘宝/天猫/京东。这是诚实的现状（状态面会说"先去连接器连一个"），不是缺陷；要让它们可闭环，
+得在连接器侧（open-connector-mt）新增 provider。**骨架已立**（2026-11-08）：
+`open-connector-mt/docs/pos-skeleton-contract.md` 与 `docs/cn-commerce-skeleton-contract.md` 把动作面、验收判据、形态分支都写定了，锚点客户确认品牌与接口形态后按契约实现即可；同一仓的 `docs/adr/0002-no-generic-http-provider.md` 记录了**为什么不做**"客户自己填 URL"的通用 provider（会把连接器变成任意出网代理、把策展目录降级成协议适配器）。目录里现成的 `n8n` / `browser_use`
+也帮不上：它们的 read 动作是自家 API 管理（`get_execution`、`list_sessions`），不是"代读任意系统"。
+
+
+## 八、三条接缝的实测对账（2026-11-08）
+
+客户在壹座装一个包，实际要接通三样东西。此前只有第一条有门，后两条从没对过账。本次逐个实测。
+
+### 8.1 连接器绑定（有门，绿）
+
+三个包都上了市场（supply-chain v3 / restaurant v2 / crossborder v2），
+`fleet-packs/scripts/check_drift.py` 逐字段一致；解析侧由 paas
+`test-connector-role-mapping` / `test-industry-connector-packs` 覆盖。
+
+### 8.2 工具面（本次实测：一致）
+
+- 注册处 `GET /api/servers` 的 `fd-erp-ledger-mcp` 条目：**19 个工具**，健康、启用；
+- 内核 `tool-surface.json` 的 `tool_groups` 声明：**19 个**，与注册处**逐项完全一致**；
+- 两个包白名单 6 个：`run_reconciliation`、`get_recon_report`、`query_balance`、
+  `query_entries`、`list_proposals`、`submit_proposal` —— **全部在**，没有一个是注册处没有的。
+
+两个刻意的不对称，写下来免得被当成缺陷：
+
+1. **13 个工具没有任何包暴露**（计费 8：submit/approve/list_billing_rules、bill_event、list/get/reverse_fee、
+   simulate_billing；信用 3：query/reserve/release_credit；提案确认门 2：confirm/reject_proposal）。
+   这不是遗漏：对账包的职责是"读流水、出差异、提 proposal"，确认门属于人的动作、
+   计费与信用属于另一层产品面（尚未产品化）。最小授权优先，等真有包需要再加白名单。
+2. **供应链连接器包没有 `mcpServers`**：它只卖连接契约与纪律卡，运行时账务面在
+   `fd-erp-ledger-mcp`、工具面由另一支岗位包（fleet-packs 的 supply-chain-recon-roles）承载。
+   另两个包各自带工具面。这个差异是有意的：连接器包不该顺手把账务工具塞给客户。
+
+### 8.3 技能（本次实测：不构成契约）
+
+内核 `tool-surface.json` 里的 `skills_eligible_for_packs: ["erp-ledger-discipline"]` 自己写明是
+**候选占位**——"本 apply 未创建这些技能，不宣称其已在别处存在"。三个包各自把纪律卡**内嵌**在
+`skills[]`（`erp-supply-connector-discipline` / `erp-restaurant-recon-discipline` /
+`erp-crossborder-recon-discipline`），与那个占位名**不需要**对齐。
+
+所以：这里没有漂移可修。哪天要让包"引用"内核侧技能（而不是内嵌），得先把占位换成真技能，
+那是另一次变更——别把今天的三个内嵌名去"对齐"到一个占位符上。
