@@ -29,7 +29,7 @@ dev = [
 # （ERP_KERNEL_TRANSPORT=mcp）。模板包只把它列为 dev extra，故本包显式声明，
 # 使「本地跑得到 = 镜像里装得上」（serve-erp-vertical-api 1.1 实锤）。
 mcp = [
-    "fastmcp>=2",
+    "fastmcp>=4.2.4,<5",
 ]
 
 [project.scripts]

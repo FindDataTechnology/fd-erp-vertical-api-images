@@ -120,6 +120,11 @@ ERROR_CATALOG: dict[str, ErrorCodeMeta] = {
     "SHARE_EXECUTION_DENIED": ErrorCodeMeta(
         "SHARE_EXECUTION_DENIED", "invalid_argument", False,
         "试图输出资金执行面（红线），拒绝。", 403),
+    # 公开读面限流（change: establish-ai-native-ecommerce-stack 0.5）：店面是匿名面，
+    # 没有调用者身份可归因，只能按来源地址计。retryable=True —— 退避后确实能过。
+    "RATE_LIMITED_PUBLIC": ErrorCodeMeta(
+        "RATE_LIMITED_PUBLIC", "upstream", True,
+        "公开读面请求过密被限流；请退避后重试。", 429),
     "DATA_SCOPE_DENIED": ErrorCodeMeta(
         "DATA_SCOPE_DENIED", "invalid_argument", False,
         "越权操作非名下/非本域数据（业务员-客户归属、代理身份越权校验失败）。",

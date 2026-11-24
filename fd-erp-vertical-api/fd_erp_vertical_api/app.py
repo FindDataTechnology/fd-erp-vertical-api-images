@@ -16,6 +16,7 @@
 """
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from fastapi import Depends, FastAPI, Request
@@ -37,12 +38,37 @@ from .logs import access_log_middleware
 from .observability import instrument_middleware
 from .pagesets import PagesetAuth, load_pageset_auth, require_grant
 from .statements import StatementService
+from .storefront import register_storefront_face
 
 PAGESET_UE = "supply-chain.ue"
 TENANT_HEADER = "X-ERP-Tenant"
 CUSTOMER_HEADER = "X-ERP-Customer"
 # 探针路径：不走租户闸（见 tenant_gate 注释）
 HEALTH_PATHS = ("/health", "/healthz")
+#: 店面公开读面：匿名可读，故不走 `X-ERP-Tenant` 头闸（匿名访客不持任何头）。
+#: 这是**显式登记**的例外清单，不是前缀白名单：每条路径带理由，新增公开路由必须
+#: 在此登记（change: establish-ai-native-ecommerce-stack 0.3/0.4）。
+#: 租户校验不因此消失——店面路由改用**路径参数** `{tenant}`，与本进程绑定租户比对，
+#: 不符一律 404（与 UE 侧「不泄露存在性」同口径）。
+SHOP_PATHS: dict[str, str] = {
+    "/shop/{tenant}/products": "店面商品列表：匿名访客的公开读面",
+    "/shop/{tenant}/products/{product_id}": "店面商品详情：匿名访客的公开读面",
+    "/shop/{tenant}/orders": "零售下单：匿名访客提交预付单（不占信用）",
+    "/shop/{tenant}/orders/{order_ref}": "零售订单查询：凭不透明单号读自己那一单",
+    "/shop/{tenant}/orders/{order_ref}/payment": "商家侧到账登记（要商家身份，买家不可达）",
+}
+
+
+def _shop_regex(path: str) -> str:
+    """把 `/shop/{tenant}/products/{id}` 编译成匹配一条路径段的正则片段。"""
+    return "/".join("[^/]+" if seg.startswith("{") else re.escape(seg)
+                    for seg in path.split("/"))
+
+
+#: **精确**匹配店面公开路由，不用前缀放行——前缀会把未来任何 `/shop/` 下的业务端点
+#: 一起豁免出身份闸，那正是「靠路径约定放行」这个坑。新增店面路由必须同时改
+#: SHOP_PATHS 与契约表（`check_rest_surface` 守两者一致）。
+SHOP_RE = re.compile("^(?:" + "|".join(_shop_regex(p) for p in SHOP_PATHS) + ")$")
 # 指标路径：同样不走租户闸。理由与探针同源但不同：/metrics 是**进程级观测面**
 # （请求数/耗时/错误码，见 observability.py），不含任何业务数据、不出现租户标识；
 # 若过租户闸，集群内抓取器（无业务身份）会一律 401，指标永远无人可读。
@@ -189,12 +215,15 @@ def create_app(settings: Settings, kernel=None, *,
 
     @app.middleware("http")
     async def tenant_gate(request: Request, call_next):
-        # 探针豁免：/health 是给 k8s readiness/liveness 用的，探针不带任何业务
-        # 身份（没有 X-ERP-Tenant），若一并过租户闸，Pod 永远不会 Ready。
-        # 该端点只回服务名与承载形态，不碰任何业务数据、不泄露租户标识。
-        if request.url.path in HEALTH_PATHS or request.url.path == METRICS_PATH:
-            return await call_next(request)
         try:
+            # 探针豁免：/health 是给 k8s readiness/liveness 用的，探针不带任何
+            # 身份（没有 X-ERP-Tenant），若一并过租户闸，Pod 永远不会 Ready。
+            # 该端点只回服务名与承载形态，不碰任何业务数据、不泄露租户标识。
+            if request.url.path in HEALTH_PATHS or request.url.path == METRICS_PATH:
+                return await call_next(request)
+            # 店面公开面：匿名可读，不走租户头闸；租户改由路径参数校验（见 storefront.py）
+            if SHOP_RE.match(request.url.path):
+                return await call_next(request)
             requested = request.headers.get(TENANT_HEADER)
             if not requested:
                 raise ApiError("AUTH_REQUIRED", f"缺少租户上下文头 {TENANT_HEADER}")
@@ -205,6 +234,9 @@ def create_app(settings: Settings, kernel=None, *,
                                        "cell_tenant": settings.tenant_id})
             return await call_next(request)
         except Exception as exc:  # noqa: BLE001 统一归一化为封闭错误码
+            # 注意 try 必须罩住所有 return 分支：豁免路径（探针/店面）里抛出的
+            # ApiError 也要走统一壳，否则未处理异常被 FastAPI 兜成 500 裸响应，
+            # 客户端拿到的是「服务端错误」而不是「不可售/不存在」（0.3 实测）。
             api = adapt_exception(exc)
             _note_error(request, api)
             return _err_response(api)
@@ -809,6 +841,8 @@ def create_app(settings: Settings, kernel=None, *,
     register_fi_face(app, settings, app.state.drivers, app.state.pageset_auth)
     # ---- WH 仓管作业（同属内部页集：不进载荷）----
     register_wh_face(app, settings, app.state.drivers, app.state.pageset_auth)
+    # ---- 店面公开读面（change: establish-ai-native-ecommerce-stack 0.3）----
+    register_storefront_face(app, settings, app.state.drivers)
 
     # 请求计数（路由模板级，见 observability.py）。**必须最后注册**：Starlette 的
     # @app.middleware 是「后注册者在最外层」，放早了会被租户闸包在内侧，于是被闸
