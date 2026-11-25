@@ -52,6 +52,10 @@ COPY fd-erp-vertical-api/pyproject.toml fd-erp-vertical-api/README.md ./
 COPY fd-erp-vertical-api/fd_erp_vertical_api ./fd_erp_vertical_api
 RUN pip install --no-cache-dir --no-deps .
 
+# 3a) 链探针（随镜像出片，供 CronJob fd-trade-chain-probe 在集群内跑）。
+#     正本在 fd-erp/tools/，本副本带出处行；两处内容由 fd-erp 的 check_all 对拍。
+COPY fd-erp-vertical-api/scripts/trade_roundtrip.py /app/scripts/trade_roundtrip.py
+
 # 3b) 店目录（change establish-ai-native-trade-discovery 1.x）：与 ERP API 同镜像、
 #     不同入口（`fd-shop-directory serve`）。为什么不单独出片：目录只依赖 fastapi/uvicorn，
 #     已在上面装齐；单独立仓要多一条出片链与一份 CI，而它和 ERP 是同一份 vendor 快照源，

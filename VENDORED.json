@@ -1,7 +1,7 @@
 {
   "purpose": "fd-erp-vertical-api 出片快照源：上下文同时含三个同级包目录。根 scripts/ci-smoke.sh 是 fd-erp-vertical-api/scripts/ci-smoke.sh 的副本。",
   "components": {
-    "fd-erp-vertical-api": "494269f0b7cf7874926919f5aac661ac68fab3b1",
+    "fd-erp-vertical-api": "785e46f33af6ef3c14f3a399a51e25deb97a731b",
     "fd-erp-vertical-templates": "7cf218a29e15f428c1f9bcfe7125f76b13b27c06",
     "fd-shop-directory": "cffbd8f5d0c47843148d629826938c7f0ceba224"
   }
