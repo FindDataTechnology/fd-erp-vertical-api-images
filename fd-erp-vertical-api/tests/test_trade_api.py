@@ -130,3 +130,48 @@ def test_accept_requires_ship_to(client):
                     json={"qty": 10, "channel": "retail-online"}, headers=H)
     assert r.status_code == 400
     assert "shipTo" in str(r.json()["error"]["detail"])
+
+
+# ---- 店面前缀（agent 无会话时唯一可达的协商入口） ----
+
+def test_shop_prefix_roundtrip_without_session(client):
+    """匿名族不需要任何会话头：租户由路径参数校验（agent 没浏览器会话）。"""
+    d = client.post("/shop/acme/trade/demands",
+                    json={"lines": [{"productId": "SKU-1", "qty": 10}],
+                          "neededBy": future(), "shipTo": SHIP})
+    assert d.status_code == 201, d.text
+    q = client.post("/shop/acme/trade/quotes",
+                    json={"demandRef": d.json()["data"]["demand_ref"],
+                          "unitPrice": "96.00", "validUntil": future(),
+                          "leadTimeDays": 3, "moq": 1, "qtyOffered": 10,
+                          "productId": "SKU-1"})
+    assert q.status_code == 201, q.text
+    a = client.post(f"/shop/acme/trade/quotes/{q.json()['data']['quote_ref']}/accept",
+                    json={"qty": 10, "shipTo": SHIP, "channel": "retail-online"})
+    assert a.status_code == 201, a.text
+    assert Decimal(a.json()["data"]["amount_total"]) == Decimal("960")
+
+
+def test_shop_prefix_wrong_tenant_is_404(client):
+    r = client.post("/shop/other/trade/demands",
+                    json={"lines": [{"productId": "SKU-1", "qty": 1}],
+                          "neededBy": future(), "shipTo": SHIP})
+    assert r.status_code == 404
+    # 不回显被请求的租户名（不泄露存在性）
+    assert "other" not in r.text
+
+
+def test_shop_prefix_grant_headers_reach_budget_gate(client):
+    d = client.post("/shop/acme/trade/demands",
+                    json={"lines": [{"productId": "SKU-1", "qty": 10}],
+                          "neededBy": future(), "shipTo": SHIP}).json()
+    q = client.post("/shop/acme/trade/quotes",
+                    json={"demandRef": d["data"]["demand_ref"], "unitPrice": "96.00",
+                          "validUntil": future(), "leadTimeDays": 3, "moq": 1,
+                          "qtyOffered": 10, "productId": "SKU-1"}).json()
+    r = client.post(f"/shop/acme/trade/quotes/{q['data']['quote_ref']}/accept",
+                    json={"qty": 10, "shipTo": SHIP, "channel": "retail-online"},
+                    headers={"X-ERP-Grant-Jti": "j1",
+                             "X-ERP-Grant-Budget": "50"})
+    assert r.status_code == 422
+    assert r.json()["error"]["code"] == "BUDGET_EXHAUSTED"

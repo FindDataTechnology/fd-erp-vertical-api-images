@@ -45,6 +45,24 @@
 | GET | `/shop/{tenant}/orders/{order_ref}` | 无（凭不透明单号） | 匿名 |
 | POST | `/shop/{tenant}/orders/{order_ref}/payment` | 无 grant（商家侧动作） | 商家 |
 
+## 3. 交易协商（匿名 + 委托）
+
+> change `establish-ai-native-trade-discovery` 2.x。这三条在 `app.SHOP_PATHS` 匿名豁免
+> 清单里（店面路径参数租户闸），**契约正文见 [`TRADE-API.md`](TRADE-API.md)** ——
+> 这里只登记身份口径，避免同一行为在两张表各写一遍。
+
+| 方法 | 路径 | 权限 | 身份 |
+|---|---|---|---|
+| POST | `/shop/{tenant}/trade/demands` | 无（匿名族） | 匿名 |
+| POST | `/shop/{tenant}/trade/quotes` | 无（匿名族） | 匿名 |
+| POST | `/shop/{tenant}/trade/quotes/{quote_ref}/accept` | 无（匿名族） | 匿名 |
+
+### 为什么协商也在匿名族
+
+agent 没有浏览器会话；网关的 `/erp` 是 fail-closed。店面族的身份模型（匿名路径 +
+Bearer 里的 Grant 由网关**验签**后注入 `x-erp-grant-*`）恰好就是协商需要的——而
+「匿名」在这里不等于「无额度」：带 Grant 的单受预算闸约束，不带的按人处理。
+
 ### 为什么下单也匿名
 
 零售买家没有客户档案、没有登录态（`ecommerce-storefront-checkout`「匿名下单只要求履约必需信息」）。

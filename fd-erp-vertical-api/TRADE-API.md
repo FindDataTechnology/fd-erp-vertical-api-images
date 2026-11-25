@@ -7,6 +7,19 @@
 
 ## 0. 身份口径
 
+**两套前缀，同一组处理器**：
+
+| 前缀 | 身份 | 谁用 |
+|---|---|---|
+| `/erp/supply-chain/v1/trade/*` | `X-ERP-Tenant` 头闸 + 会话 | 商家后台（有人登录态） |
+| `/shop/{tenant}/trade/*` | 路径参数租户闸 + 网关注入的 Grant | **agent**（无浏览器会话） |
+
+为什么必须有第二套：agent 没有会话，网关的 `/erp` 是 fail-closed（无会话 401）。店面族的
+`/shop` 专为「无会话但有委托」设计——它验 Bearer 里的 Grant 并注入 `x-erp-grant-*`，
+这正是协商需要的身份。只在 `/erp` 下挂，agent 就只能绕过网关直连 ERP，那样 Grant 不验签、
+预算闸拿不到额度（2026-11-25 实测到：直连时 `grant_jti=null`、`reason=no_grant_context`）。
+
+
 | 取值 | 含义 |
 |---|---|
 | `商家` | 需租户身份头 `X-ERP-Tenant`（本进程绑定租户），跨租户 403 |
@@ -21,6 +34,7 @@
 | 方法 | 路径 | 权限 | 身份 |
 |---|---|---|---|
 | POST | `/erp/supply-chain/v1/trade/demands` | `trade.write` | 商家 + 委托 |
+| POST | `/shop/{tenant}/trade/demands` | 无（匿名族，Grant 由网关验签） | 匿名 + 委托 |
 
 ### 纪律
 
@@ -37,6 +51,7 @@
 | 方法 | 路径 | 权限 | 身份 |
 |---|---|---|---|
 | POST | `/erp/supply-chain/v1/trade/quotes` | `trade.write` | 商家 |
+| POST | `/shop/{tenant}/trade/quotes` | 无（匿名族） | 匿名 |
 
 ### 纪律
 
@@ -50,6 +65,7 @@
 | 方法 | 路径 | 权限 | 身份 |
 |---|---|---|---|
 | POST | `/erp/supply-chain/v1/trade/quotes/{quote_ref}/accept` | `trade.write` | 商家 + 委托 |
+| POST | `/shop/{tenant}/trade/quotes/{quote_ref}/accept` | 无（匿名族，Grant 由网关验签） | 匿名 + 委托 |
 
 ### 纪律
 

@@ -57,6 +57,12 @@ SHOP_PATHS: dict[str, str] = {
     "/shop/{tenant}/orders": "零售下单：匿名访客提交预付单（不占信用）",
     "/shop/{tenant}/orders/{order_ref}": "零售订单查询：凭不透明单号读自己那一单",
     "/shop/{tenant}/orders/{order_ref}/payment": "商家侧到账登记（要商家身份，买家不可达）",
+    # 交易协商面（establish-ai-native-trade-discovery 2.x）：agent 无浏览器会话，网关的
+    # /erp 是 fail-closed；店面族的身份模型（匿名路径 + Bearer 里的 Grant 由网关验签）
+    # 恰好就是协商需要的。只在 /erp 下挂会让 agent 只能绕过网关直连——那样 Grant 不验签。
+    "/shop/{tenant}/trade/demands": "询价单：agent 声明需求（不许带价格）",
+    "/shop/{tenant}/trade/quotes": "报价：卖方对询价单给出有时效的承诺",
+    "/shop/{tenant}/trade/quotes/{quote_ref}/accept": "接受报价 → 订单（成交价取自报价）",
 }
 
 
