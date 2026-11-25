@@ -39,6 +39,7 @@ from .observability import instrument_middleware
 from .pagesets import PagesetAuth, load_pageset_auth, require_grant
 from .statements import StatementService
 from .storefront import register_storefront_face
+from .trade import register_trade_face
 
 PAGESET_UE = "supply-chain.ue"
 TENANT_HEADER = "X-ERP-Tenant"
@@ -843,6 +844,9 @@ def create_app(settings: Settings, kernel=None, *,
     register_wh_face(app, settings, app.state.drivers, app.state.pageset_auth)
     # ---- 店面公开读面（change: establish-ai-native-ecommerce-stack 0.3）----
     register_storefront_face(app, settings, app.state.drivers)
+    # 交易协商面（change establish-ai-native-trade-discovery 2.x）：卖方面，走
+    # 既有 X-ERP-Tenant 头闸（不在 SHOP_PATHS 匿名豁免清单里）。
+    register_trade_face(app, settings, app.state.drivers)
 
     # 请求计数（路由模板级，见 observability.py）。**必须最后注册**：Starlette 的
     # @app.middleware 是「后注册者在最外层」，放早了会被租户闸包在内侧，于是被闸

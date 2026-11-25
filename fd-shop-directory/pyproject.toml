@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fd-shop-directory"
+version = "0.1.0"
+description = "店目录（change establish-ai-native-trade-discovery 1.x）：跨店发现的唯一入口。只存指针与类目，不复制商品主档——价格与库存永远回原店读。"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "FindDataTechnology" }]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+fd-shop-directory = "fd_shop_directory.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["fd_shop_directory*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

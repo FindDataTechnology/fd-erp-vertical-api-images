@@ -1,0 +1,43 @@
+{
+ "schema": "shopify-live-read/v1",
+ "measured_at": "2026-11-24T15:24:46+00:00",
+ "shop": "finddata-recon-poc.myshopify.com",
+ "surface": "orders",
+ "count": 1,
+ "note": "Protected Customer Data 已开通（Level 1 Customer data / Reason: App functionality）后读到真实订单；Level 2 保护字段（姓名/邮箱/电话/地址）**未申请**——对账只需订单金额与状态，不取 PII",
+ "pii_requested": false,
+ "response": {
+  "data": {
+   "orders": {
+    "edges": [
+     {
+      "node": {
+       "id": "gid://shopify/Order/7806420844700",
+       "name": "#1001",
+       "createdAt": "2026-11-24T14:43:40Z",
+       "displayFinancialStatus": "PAID",
+       "displayFulfillmentStatus": "UNFULFILLED",
+       "totalPriceSet": {
+        "shopMoney": {
+         "amount": "2629.95",
+         "currencyCode": "USD"
+        }
+       }
+      }
+     }
+    ]
+   }
+  },
+  "extensions": {
+   "cost": {
+    "requestedQueryCost": 7,
+    "actualQueryCost": 3,
+    "throttleStatus": {
+     "maximumAvailable": 2000.0,
+     "currentlyAvailable": 1997,
+     "restoreRate": 100.0
+    }
+   }
+  }
+ }
+}

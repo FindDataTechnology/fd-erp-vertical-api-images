@@ -53,6 +53,7 @@ from fd_erp_vertical_templates.orchestration import (AfterSalesOrchestrator,
                                                      InvoiceRequestLane,
                                                      OrderOrchestrator,
                                                      ProcurementOrchestrator)
+from fd_erp_vertical_templates.negotiation import TradeDesk
 from fd_erp_vertical_templates.pricing import PricingRuleBook
 from fd_erp_vertical_templates.reports import ThresholdEvaluator
 from fd_erp_vertical_templates.wms_sync import DemoWmsAdapter, WmsSnapshotAdapter
@@ -90,6 +91,9 @@ class Drivers:
     crm: CrmOrchestrator
     invoices: InvoiceRequestLane
     procurement: ProcurementOrchestrator
+    #: 协商车道（change establish-ai-native-trade-discovery 2.x）：询价/报价/接受。
+    #: 与 orders 共用同一份编排档——一次交易尝试是连续事实，分开存要拼两个文件。
+    trade: TradeDesk
     fulfillment: FulfillmentOrchestrator
     freight: FreightStatementLane
     #: 库存作业车道（入库/出库/调拨/盘点）：事实走拟稿车道，拍板后由 API 侧过门再投影。
@@ -183,6 +187,7 @@ def build_drivers(settings: Settings, kernel) -> Drivers:
     pricing = PricingRuleBook(settings.tenant_id, data_dir, master)
     orders = OrderOrchestrator(settings.tenant_id, data_dir, kernel, master,
                                pricing, base_currency=settings.base_currency)
+    trade = TradeDesk(settings.tenant_id, data_dir)
     procurement = ProcurementOrchestrator(settings.tenant_id, data_dir, master,
                                           kernel=kernel)
     logistics = DemoLogisticsAdapter()
@@ -278,7 +283,7 @@ def build_drivers(settings: Settings, kernel) -> Drivers:
     disposal = ThresholdEvaluator(settings.tenant_id, data_dir)
     return Drivers(tenant_id=settings.tenant_id, master=master, pricing=pricing,
                    orders=orders, aftersales=aftersales, crm=crm,
-                   invoices=invoices, procurement=procurement,
+                   invoices=invoices, procurement=procurement, trade=trade,
                    fulfillment=fulfillment, freight=freight,
                    inventory=inventory, policy=policy, cost=cost, assets=assets,
                    budget=budget, invoice_receipts=invoice_receipts,

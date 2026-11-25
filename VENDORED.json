@@ -1,7 +1,8 @@
 {
-  "purpose": "fd-erp-vertical-api 出片快照源",
+  "purpose": "fd-erp-vertical-api 出片快照源：Dockerfile 要求上下文同时含三个同级包目录（api + templates + shop-directory）。根 scripts/ci-smoke.sh 是 fd-erp-vertical-api/scripts/ci-smoke.sh 的副本，池按上下文根寻它。",
   "components": {
-    "fd-erp-vertical-api": "f7ae8796f33eb969a67c0937142a6002bb21bbd8",
-    "fd-erp-vertical-templates": "94e4b4c40fc5126099a3f20c9d16cf37d117fd7e"
+    "fd-erp-vertical-api": "fa7b9a142fc28eec2e33622fd789b50e4f1d19e1",
+    "fd-erp-vertical-templates": "7cf218a29e15f428c1f9bcfe7125f76b13b27c06",
+    "fd-shop-directory": "cffbd8f5d0c47843148d629826938c7f0ceba224"
   }
 }

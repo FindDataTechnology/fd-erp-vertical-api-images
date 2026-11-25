@@ -52,6 +52,16 @@ COPY fd-erp-vertical-api/pyproject.toml fd-erp-vertical-api/README.md ./
 COPY fd-erp-vertical-api/fd_erp_vertical_api ./fd_erp_vertical_api
 RUN pip install --no-cache-dir --no-deps .
 
+# 3b) 店目录（change establish-ai-native-trade-discovery 1.x）：与 ERP API 同镜像、
+#     不同入口（`fd-shop-directory serve`）。为什么不单独出片：目录只依赖 fastapi/uvicorn，
+#     已在上面装齐；单独立仓要多一条出片链与一份 CI，而它和 ERP 是同一份 vendor 快照源，
+#     同片出更省（也避免两者版本漂移）。跨租户语义不受影响：它仍是**独立进程**
+#     （独立 Deployment），不是塞进 ERP 进程里。
+COPY fd-shop-directory/fd_shop_directory /opt/fd-shop-directory/fd_shop_directory
+COPY fd-shop-directory/pyproject.toml /opt/fd-shop-directory/pyproject.toml
+RUN pip install --no-cache-dir --no-deps /opt/fd-shop-directory \
+ && python -c "import fd_shop_directory; print('dir pkg in image', fd_shop_directory.__version__)"
+
 # 4) 非 root + 事件档目录（PVC 挂载点；serve-erp-vertical-api D2）
 RUN useradd --create-home --uid 10001 appuser \
  && mkdir -p /data && chown -R appuser:appuser /app /data
