@@ -55,6 +55,12 @@ ERROR_CATALOG: dict[str, ErrorCodeMeta] = {
     "CREDIT_EXCEEDED": ErrorCodeMeta(
         "CREDIT_EXCEEDED", "invalid_argument", False,
         "信用额度不足；detail 含额度明细（上限/应收余额/已占用/本次请求/可用）。", 422),
+    # 与 CREDIT_EXCEEDED 不是一回事：那是客户赊销额度，这是**委托人给 agent 的
+    # 花钱上限**（Grant budget）。两者都拒单，但改法完全不同（一个要找财务调额，
+    # 一个要找委托人加预算），混成一个码会把排查方向带错。
+    "BUDGET_EXHAUSTED": ErrorCodeMeta(
+        "BUDGET_EXHAUSTED", "invalid_argument", False,
+        "本次委托的授权额度不足以支付该笔；detail 含 limit/used/remaining/order_total。", 422),
     # 与 CREDIT_EXCEEDED 严格区分（2026-11-08 产上首现）：未登记额度是**运维前置
     # 动作缺失**，不是「钱不够」，也不是调用方参数错——此前被兜成
     # INVALID_ARGUMENT「信用额度 limit 非法：None」，误导排查方向。
@@ -137,6 +143,7 @@ ERROR_CATALOG: dict[str, ErrorCodeMeta] = {
 
 #: 模板层错误码 → HTTP 映射补遗（TemplateError 独有码；语义同 TemplateError.CODES）
 _TEMPLATE_CODE_HTTP: dict[str, int] = {
+    "BUDGET_EXHAUSTED": 422,
     "MAPPING_INVALID": 400,
     "MANIFEST_INVALID": 400,
     "BOUNDARY_VIOLATION": 500,

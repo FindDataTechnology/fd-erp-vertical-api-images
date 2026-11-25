@@ -325,3 +325,22 @@ def test_payment_then_confirm_gate(shop):
     got = client.get(f"/shop/{TENANT}/orders/{ref}", headers={}).json()["data"]
     assert got["payment_state"] == "received"
     assert got["status"] == "confirmed"
+
+
+def test_budget_exhausted_maps_to_422_not_500(shop):
+    """预算不足必须是可解释的 422，不能是 500 INTERNAL。
+
+    2026-11-25 线上实撞：模板层抛 BUDGET_EXHAUSTED，但 API 的 adapt_exception
+    不认识这个码，兜成 500「服务内部错误」——调用方看不出是「额度不够」。
+    """
+    client, *_ = shop
+    body = {"lines": [{"productId": "SKU-001", "qty": 10}], "shipTo": SHIP}
+    r = client.post(f"/shop/{TENANT}/orders", json=body,
+                    headers={"Idempotency-Key": "budget-1",
+                             "X-ERP-Grant-Jti": "jti-budget",
+                             "X-ERP-Grant-Budget": "1"})
+    assert r.status_code == 422, r.text
+    err = r.json()["error"]
+    assert err["code"] == "BUDGET_EXHAUSTED"
+    assert err["detail"]["order_total"]
+    assert err["detail"]["remaining"]

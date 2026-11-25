@@ -1,7 +1,7 @@
 {
-  "purpose": "fd-erp-vertical-api 出片快照源：Dockerfile 要求上下文同时含两个同级包目录",
+  "purpose": "fd-erp-vertical-api 出片快照源",
   "components": {
-    "fd-erp-vertical-api": "ed3997b0ab6ef5f2b1f0c94f541c049b51ec04b9",
+    "fd-erp-vertical-api": "f7ae8796f33eb969a67c0937142a6002bb21bbd8",
     "fd-erp-vertical-templates": "94e4b4c40fc5126099a3f20c9d16cf37d117fd7e"
   }
 }
