@@ -225,12 +225,25 @@ def register_storefront_face(app: FastAPI, settings: Settings,
                 return ok_shell({**seen, "duplicate": True,
                                  "note": "同一 Idempotency-Key 已受理：返回首次订单"})
 
+        # 委托身份（agent 代委托人下单）：两个头都由网关注入，客户端伪造不了
+        # —— 网关会剥离并重注入（见 paas/server/routes/erp-proxy.js 的身份头纪律）。
+        # 这里只做透传：有 grant_jti 才启用预算闸；无则按「人」下单（与改造前同）。
+        grant_jti = (request.headers.get("X-ERP-Grant-Jti") or "").strip() or None
+        grant_budget = (request.headers.get("X-ERP-Grant-Budget") or "").strip() or None
+        if grant_jti and grant_budget:
+            try:
+                float(grant_budget)
+            except ValueError as exc:
+                raise ApiError("INVALID_ARGUMENT",
+                               f"X-ERP-Grant-Budget 须为数字：{grant_budget!r}") from exc
+
         try:
             out = d.orders.accept_prepaid_order(
                 [{"product_code": code, "qty": qty, **({"unit": unit} if unit else {})}
                  for code, qty, unit in rows],
                 _today(), channel=channel, ship_to=ship_to,
-                requested_by="storefront")
+                requested_by=("agent" if grant_jti else "storefront"),
+                grant_jti=grant_jti, grant_budget=grant_budget)
         except TemplateError as exc:
             raise adapt_exception(exc) from exc
 

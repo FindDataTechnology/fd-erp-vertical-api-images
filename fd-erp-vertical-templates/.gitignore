@@ -8,6 +8,3 @@ build/
 .DS_Store
 data/
 graphify-out/
-
-# 实测证据含真订单号与金额（内部测试店），不进公开出片仓
-coverage/shopify-live/
